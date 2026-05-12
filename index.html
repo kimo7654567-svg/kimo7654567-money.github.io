@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小豬撲滿 🐷</title>
+<!-- v1.02 -->
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --pink:   #FF6B9D;
+    --yellow: #FFD93D;
+    --green:  #6BCB77;
+    --blue:   #4D96FF;
+    --red:    #FF4D4D;
+    --bg:     #FFF9F0;
+    --card:   #FFFFFF;
+    --text:   #2D2D2D;
+    --muted:  #9A9A9A;
+    --radius: 20px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: linear-gradient(135deg, #FF6B9D 0%, #FF9A5C 100%);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(255,107,157,0.3);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  .version-badge {
+    font-size: 0.65rem;
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .balance-pill {
+    background: rgba(255,255,255,0.95);
+    color: var(--pink);
+    font-weight: 900;
+    font-size: 1.1rem;
+    padding: 6px 18px;
+    border-radius: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* ── NAV ── */
+  .nav {
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid #F0E8DE;
+    position: sticky; top: 64px; z-index: 99;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: transparent;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .nav-btn .nav-icon { font-size: 1.3rem; }
+  .nav-btn.active {
+    color: var(--pink);
+    border-bottom-color: var(--pink);
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 20px 16px 80px; max-width: 600px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ── PAGE 1: LEDGER ── */
+  .type-toggle {
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .type-btn {
+    flex: 1; padding: 12px; border: 2px solid #eee;
+    border-radius: 14px; background: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800; font-size: 1rem;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .type-btn.income.active  { background: #E8FAE8; border-color: var(--green); color: #2a7a2a; }
+  .type-btn.expense.active { background: #FFF0F0; border-color: var(--red);   color: #a30000; }
+
+  .input-group { margin-bottom: 12px; }
+  .input-group label {
+    display: block; font-weight: 700; font-size: 0.85rem;
+    color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .input-group input, .input-group textarea {
+    width: 100%; padding: 12px 14px;
+    border: 2px solid #EEE; border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 600;
+    outline: none; transition: border 0.2s; background: #FAFAFA;
+  }
+  .input-group input:focus, .input-group textarea:focus {
+    border-color: var(--pink); background: #fff;
+  }
+  .input-group textarea { resize: none; height: 72px; }
+
+  .submit-btn {
+    width: 100%; padding: 15px;
+    border: none; border-radius: 14px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.2s;
+    background: linear-gradient(135deg, var(--pink), #FF9A5C);
+    color: #fff; box-shadow: 0 4px 14px rgba(255,107,157,0.35);
+  }
+  .submit-btn:active { transform: scale(0.97); }
+
+  /* transaction list */
+  .tx-list { display: flex; flex-direction: column; gap: 10px; }
+  .tx-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 14px;
+    background: #FAFAFA; border: 1.5px solid #F0E8DE;
+    transition: box-shadow 0.2s;
+  }
+  .tx-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+  .tx-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .tx-icon.income  { background: #E8FAE8; }
+  .tx-icon.expense { background: #FFF0F0; }
+  .tx-info { flex: 1; }
+  .tx-desc { font-weight: 700; font-size: 0.9rem; }
+  .tx-date { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+  .tx-amount { font-weight: 900; font-size: 1rem; }
+  .tx-amount.income  { color: var(--green); }
+  .tx-amount.expense { color: var(--red); }
+  .tx-delete {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 1rem; padding: 4px;
+    border-radius: 6px; transition: color 0.2s;
+  }
+  .tx-delete:hover { color: var(--red); }
+
+  /* ── PAGE 2: HISTORY CHART ── */
+  .chart-wrap { position: relative; height: 300px; }
+
+  /* ── PAGE 3: COMPOUND ── */
+  .rate-row {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+  }
+  .rate-row input {
+    width: 90px; padding: 10px 12px;
+    border: 2px solid #EEE; border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800;
+    outline: none; text-align: center; background: #FAFAFA;
+  }
+  .rate-row input:focus { border-color: var(--blue); background: #fff; }
+  .rate-label { font-weight: 700; color: var(--muted); }
+  .legend-row {
+    display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.85rem; font-weight: 700;
+  }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  /* compound table */
+  .compound-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .compound-table th {
+    text-align: left; padding: 8px 10px;
+    border-bottom: 2px solid #F0E8DE;
+    font-weight: 800; color: var(--muted); font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .compound-table td {
+    padding: 10px 10px; border-bottom: 1px solid #F5EDE3;
+    font-weight: 600;
+  }
+  .compound-table tr:last-child td { border-bottom: none; }
+  .cost-10yr { font-weight: 900; color: var(--red); }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center; padding: 30px 0;
+    color: var(--muted); font-size: 0.9rem; font-weight: 600;
+  }
+  .empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+
+  /* ── DEBUG CONSOLE ── */
+  #debug-panel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(20,20,20,0.95); color: #00FF88;
+    font-family: monospace; font-size: 0.72rem;
+    padding: 6px 10px; max-height: 120px; overflow-y: auto;
+    z-index: 9999; display: none;
+    border-top: 2px solid #00FF88;
+  }
+  #debug-toggle {
+    position: fixed; bottom: 10px; right: 10px;
+    background: #222; color: #00FF88;
+    border: 1px solid #00FF88; border-radius: 6px;
+    font-size: 0.65rem; padding: 3px 7px;
+    cursor: pointer; z-index: 10000; font-family: monospace;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 22px;
+    border-radius: 30px; font-weight: 700; font-size: 0.9rem;
+    z-index: 9998; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🐷 小豬撲滿</div>
+    <span class="version-badge">v1.02</span>
+  </div>
+  <div class="balance-pill" id="balance-display">NT$ 0</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('ledger',this)">
+    <span class="nav-icon">✏️</span>記帳
+  </button>
+  <button class="nav-btn" onclick="showPage('history',this)">
+    <span class="nav-icon">📈</span>歷史
+  </button>
+  <button class="nav-btn" onclick="showPage('compound',this)">
+    <span class="nav-icon">🚀</span>複利
+  </button>
+</nav>
+
+<!-- ══════════════ PAGE 1 ══════════════ -->
+<div class="page active" id="page-ledger">
+
+  <div class="card">
+    <div class="card-title">💰 新增紀錄</div>
+
+    <div class="type-toggle">
+      <button class="type-btn income active" id="btn-income" onclick="setType('income')">
+        ➕ 收入
+      </button>
+      <button class="type-btn expense" id="btn-expense" onclick="setType('expense')">
+        ➖ 支出
+      </button>
+    </div>
+
+    <div class="input-group">
+      <label>金額（元）</label>
+      <input type="number" id="input-amount" placeholder="例：200" min="0" />
+    </div>
+
+    <div class="input-group">
+      <label>說明（選填）</label>
+      <textarea id="input-desc" placeholder="例：零用錢、買飲料..."></textarea>
+    </div>
+
+    <button class="submit-btn" onclick="addTransaction()">記下來 🎉</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 所有紀錄</div>
+    <div class="tx-list" id="tx-list">
+      <div class="empty"><span class="empty-icon">📭</span>還沒有紀錄喔！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE 2 ══════════════ -->
+<div class="page" id="page-history">
+  <div class="card">
+    <div class="card-title">📈 資產變化</div>
+    <div class="chart-wrap">
+      <canvas id="history-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE 3 ══════════════ -->
+<div class="page" id="page-compound">
+
+  <div class="card">
+    <div class="card-title">⚙️ 設定</div>
+    <div class="rate-row">
+      <span class="rate-label">年利率</span>
+      <input type="number" id="input-rate" value="5" min="0" max="100" step="0.1" oninput="renderCompound()" />
+      <span class="rate-label">%</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--green)"></div>
+        <span>不花錢的理想未來</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--red)"></div>
+        <span>扣掉花費的現實未來</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🚀 十年複利預測</div>
+    <div class="chart-wrap">
+      <canvas id="compound-chart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💸 每筆花費的真正代價</div>
+    <div id="compound-table-wrap">
+      <div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- DEBUG -->
+<button id="debug-toggle" onclick="toggleDebug()">DEBUG</button>
+<div id="debug-panel" id="debug-log"></div>
+
+<script>
+// ══════════════════════════════════════
+//  DEBUG LOGGER
+// ══════════════════════════════════════
+const debugLines = [];
+function dbg(msg, data) {
+  const ts = new Date().toLocaleTimeString('zh-TW');
+  const line = data !== undefined
+    ? `[${ts}] ${msg}: ${JSON.stringify(data)}`
+    : `[${ts}] ${msg}`;
+  debugLines.unshift(line);
+  if (debugLines.length > 50) debugLines.pop();
+  const panel = document.getElementById('debug-panel');
+  if (panel) panel.innerHTML = debugLines.map(l => `<div>${l}</div>`).join('');
+  console.log(line);
+}
+function toggleDebug() {
+  const p = document.getElementById('debug-panel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+window.onerror = (msg, src, line, col, err) => {
+  dbg(`❌ ERROR: ${msg}`, { src, line, col });
+  showToast('⚠️ 發生錯誤，請開啟 DEBUG 查看');
+};
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let txType = 'income';
+let historyChartInst = null;
+let compoundChartInst = null;
+
+function getTransactions() {
+  try {
+    return JSON.parse(localStorage.getItem('piggy_txs') || '[]');
+  } catch(e) { dbg('getTransactions error', e.message); return []; }
+}
+function saveTransactions(txs) {
+  try {
+    localStorage.setItem('piggy_txs', JSON.stringify(txs));
+    dbg('saved transactions', txs.length);
+  } catch(e) { dbg('saveTransactions error', e.message); }
+}
+function getBalance() {
+  return getTransactions().reduce((sum, tx) => {
+    return tx.type === 'income' ? sum + tx.amount : sum - tx.amount;
+  }, 0);
+}
+
+// ══════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  dbg('showPage', name);
+  if (name === 'history') renderHistory();
+  if (name === 'compound') renderCompound();
+}
+
+// ══════════════════════════════════════
+//  PAGE 1 – LEDGER
+// ══════════════════════════════════════
+function setType(t) {
+  txType = t;
+  document.getElementById('btn-income').classList.toggle('active', t === 'income');
+  document.getElementById('btn-expense').classList.toggle('active', t === 'expense');
+  dbg('setType', t);
+}
+
+function addTransaction() {
+  const amtRaw = document.getElementById('input-amount').value;
+  const desc   = document.getElementById('input-desc').value.trim();
+  const amt    = parseFloat(amtRaw);
+
+  if (!amtRaw || isNaN(amt) || amt <= 0) {
+    showToast('❗ 請輸入有效金額');
+    return;
+  }
+
+  const tx = {
+    id:     Date.now(),
+    type:   txType,
+    amount: amt,
+    desc:   desc || (txType === 'income' ? '收入' : '支出'),
+    date:   new Date().toISOString()
+  };
+
+  const txs = getTransactions();
+  txs.push(tx);
+  saveTransactions(txs);
+
+  document.getElementById('input-amount').value = '';
+  document.getElementById('input-desc').value   = '';
+
+  renderTxList();
+  updateBalance();
+  showToast(txType === 'income' ? '💰 收入新增成功！' : '💸 支出紀錄完成！');
+  dbg('addTransaction', tx);
+}
+
+function deleteTransaction(id) {
+  const txs = getTransactions().filter(tx => tx.id !== id);
+  saveTransactions(txs);
+  renderTxList();
+  updateBalance();
+  showToast('🗑️ 已刪除');
+  dbg('deleteTransaction', id);
+}
+
+function renderTxList() {
+  const list = document.getElementById('tx-list');
+  const txs  = getTransactions().slice().reverse();
+
+  if (txs.length === 0) {
+    list.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>還沒有紀錄喔！</div>';
+    return;
+  }
+
+  list.innerHTML = txs.map(tx => {
+    const d = new Date(tx.date);
+    const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const sign = tx.type === 'income' ? '+' : '-';
+    return `
+      <div class="tx-item">
+        <div class="tx-icon ${tx.type}">${tx.type === 'income' ? '💰' : '💸'}</div>
+        <div class="tx-info">
+          <div class="tx-desc">${escHtml(tx.desc)}</div>
+          <div class="tx-date">${dateStr}</div>
+        </div>
+        <div class="tx-amount ${tx.type}">${sign}NT$${tx.amount.toLocaleString()}</div>
+        <button class="tx-delete" onclick="deleteTransaction(${tx.id})" title="刪除">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateBalance() {
+  const bal = getBalance();
+  document.getElementById('balance-display').textContent = `NT$ ${bal.toLocaleString()}`;
+}
+
+// ══════════════════════════════════════
+//  PAGE 2 – HISTORY CHART
+// ══════════════════════════════════════
+function renderHistory() {
+  const txs = getTransactions();
+  const ctx  = document.getElementById('history-chart').getContext('2d');
+
+  if (historyChartInst) { historyChartInst.destroy(); historyChartInst = null; }
+
+  if (txs.length === 0) {
+    dbg('renderHistory: no data');
+    return;
+  }
+
+  // build cumulative data
+  let running = 0;
+  const points = txs.map(tx => {
+    running += tx.type === 'income' ? tx.amount : -tx.amount;
+    const d = new Date(tx.date);
+    return {
+      x: `${d.getMonth()+1}/${d.getDate()}`,
+      y: running
+    };
+  });
+
+  dbg('renderHistory points', points.length);
+
+  historyChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: points.map(p => p.x),
+      datasets: [{
+        label: '累積資產 (NT$)',
+        data: points.map(p => p.y),
+        borderColor: '#FF6B9D',
+        backgroundColor: 'rgba(255,107,157,0.12)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: '#FF6B9D',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          ticks: {
+            callback: v => 'NT$' + v.toLocaleString(),
+            font: { family: 'Nunito', weight: '700' }
+          },
+          grid: { color: '#F0E8DE' }
+        },
+        x: {
+          ticks: { font: { family: 'Nunito', weight: '600' } },
+          grid: { color: '#F0E8DE' }
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════
+//  PAGE 3 – COMPOUND CHART
+// ══════════════════════════════════════
+function renderCompound() {
+  const rate     = parseFloat(document.getElementById('input-rate').value) / 100 || 0.05;
+  const txs      = getTransactions();
+  const balance  = getBalance();
+  const expenses = txs.filter(tx => tx.type === 'expense');
+  const totalExp = expenses.reduce((s, tx) => s + tx.amount, 0);
+  const ctx      = document.getElementById('compound-chart').getContext('2d');
+
+  if (compoundChartInst) { compoundChartInst.destroy(); compoundChartInst = null; }
+
+  // 理想線：如果當初完全不花錢，現在應該有 balance + totalExp，往後複利
+  // 現實線：現在實際資產 balance，往後複利
+  const fullAmount = balance + totalExp;
+  const years  = Array.from({length: 11}, (_, i) => `第${i}年`);
+  const ideal  = years.map((_, i) => +(fullAmount * Math.pow(1 + rate, i)).toFixed(0));
+  const real   = years.map((_, i) => +(balance   * Math.pow(1 + rate, i)).toFixed(0));
+
+  dbg('renderCompound', { rate, balance, totalExp });
+
+  // plugin：在每條線尾端顯示金額
+  const endLabelPlugin = {
+    id: 'endLabel',
+    afterDatasetsDraw(chart) {
+      const { ctx: c, scales: { x, y } } = chart;
+      chart.data.datasets.forEach((ds, i) => {
+        const meta = chart.getDatasetMeta(i);
+        if (meta.hidden) return;
+        const last = meta.data[meta.data.length - 1];
+        if (!last) return;
+        const val = ds.data[ds.data.length - 1];
+        const text = 'NT$' + val.toLocaleString();
+        c.save();
+        c.font = 'bold 12px Nunito, sans-serif';
+        const tw = c.measureText(text).width;
+        c.fillStyle = 'rgba(255,255,255,0.88)';
+        c.fillRect(last.x + 6, last.y - 10, tw + 8, 20);
+        c.fillStyle = ds.borderColor;
+        c.textAlign = 'left';
+        c.textBaseline = 'middle';
+        c.fillText(text, last.x + 10, last.y);
+        c.restore();
+      });
+    }
+  };
+
+  compoundChartInst = new Chart(ctx, {
+    type: 'line',
+    plugins: [endLabelPlugin],
+    data: {
+      labels: years,
+      datasets: [
+        {
+          label: '🟢 理想（不花錢）',
+          data: ideal,
+          borderColor: '#6BCB77',
+          backgroundColor: 'rgba(107,203,119,0.10)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#6BCB77',
+          fill: false, tension: 0.3
+        },
+        {
+          label: '🔴 現實（扣花費）',
+          data: real,
+          borderColor: '#FF4D4D',
+          backgroundColor: 'rgba(255,77,77,0.08)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#FF4D4D',
+          fill: false, tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 95 } },
+      plugins: {
+        legend: {
+          labels: { font: { family: 'Nunito', weight: '700' }, boxWidth: 14 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` NT$ ${ctx.raw.toLocaleString()}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: v => 'NT$' + v.toLocaleString(),
+            font: { family: 'Nunito', weight: '700' }
+          },
+          grid: { color: '#F0E8DE' }
+        },
+        x: {
+          ticks: { font: { family: 'Nunito', weight: '600' } },
+          grid: { color: '#F0E8DE' }
+        }
+      }
+    }
+  });
+
+  // render table
+  renderCompoundTable(expenses, rate);
+}
+
+function renderCompoundTable(expenses, rate) {
+  const wrap = document.getElementById('compound-table-wrap');
+  if (expenses.length === 0) {
+    wrap.innerHTML = '<div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div>';
+    return;
+  }
+
+  const rows = expenses.map(tx => {
+    const cost10 = Math.round(tx.amount * Math.pow(1 + rate, 10));
+    const d = new Date(tx.date);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    return `
+      <tr>
+        <td>${dateStr}</td>
+        <td>${escHtml(tx.desc)}</td>
+        <td style="color:var(--red);font-weight:800;">-NT$${tx.amount.toLocaleString()}</td>
+        <td class="cost-10yr">≈ NT$${cost10.toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="compound-table">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>說明</th>
+          <th>花費</th>
+          <th>10年後代價</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  dbg('renderCompoundTable rows', expenses.length);
+}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+dbg('🐷 App init v1.02');
+renderTxList();
+updateBalance();
+</script>
+</body>
+</html>
