@@ -4,13 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>小豬撲滿 🐷</title>
-<!-- v1.04 -->
+<!-- v1.05 -->
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
     --pink:   #FF6B9D;
-    --yellow: #FFD93D;
     --green:  #6BCB77;
     --blue:   #4D96FF;
     --red:    #FF4D4D;
@@ -22,349 +21,157 @@
     --shadow: 0 4px 20px rgba(0,0,0,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Nunito', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* ── TOP BAR ── */
-  .topbar {
-    background: linear-gradient(135deg, #FF6B9D 0%, #FF9A5C 100%);
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 12px rgba(255,107,157,0.3);
-  }
-  .topbar-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.5rem;
-    color: #fff;
-    letter-spacing: 1px;
-  }
-  .version-badge {
-    font-size: 0.65rem;
-    background: rgba(255,255,255,0.25);
-    color: #fff;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-  .balance-pill {
-    background: rgba(255,255,255,0.95);
-    color: var(--pink);
-    font-weight: 900;
-    font-size: 1.1rem;
-    padding: 6px 18px;
-    border-radius: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
+  .topbar { background: linear-gradient(135deg, #FF6B9D 0%, #FF9A5C 100%); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(255,107,157,0.3); }
+  .topbar-left { display: flex; flex-direction: column; gap: 3px; }
+  .topbar-title { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: #fff; letter-spacing: 1px; }
+  .version-badge { font-size: 0.65rem; background: rgba(255,255,255,0.25); color: #fff; padding: 2px 8px; border-radius: 20px; font-weight: 700; letter-spacing: 1px; width: fit-content; }
+  .balance-pill { background: rgba(255,255,255,0.95); color: var(--pink); font-weight: 900; font-size: 1.1rem; padding: 6px 18px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); white-space: nowrap; }
 
-  /* ── NAV ── */
-  .nav {
-    display: flex;
-    background: #fff;
-    border-bottom: 2px solid #F0E8DE;
-    position: sticky; top: 0; z-index: 99;
-  }
-  .nav-btn {
-    flex: 1;
-    padding: 14px 8px;
-    border: none;
-    background: transparent;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-  }
+  .sync-bar { background: #fff; padding: 6px 16px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #F0E8DE; min-height: 28px; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sync-dot.ok      { background: var(--green); }
+  .sync-dot.loading { background: #FFD93D; animation: pulse 1s infinite; }
+  .sync-dot.error   { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .nav { display: flex; background: #fff; border-bottom: 2px solid #F0E8DE; position: sticky; top: 0; z-index: 99; }
+  .nav-btn { flex: 1; padding: 14px 8px; border: none; background: transparent; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .nav-btn .nav-icon { font-size: 1.3rem; }
-  .nav-btn.active {
-    color: var(--pink);
-    border-bottom-color: var(--pink);
-  }
+  .nav-btn.active { color: var(--pink); border-bottom-color: var(--pink); }
 
-  /* ── PAGES ── */
   .page { display: none; padding: 20px 16px 80px; max-width: 600px; margin: 0 auto; }
   .page.active { display: block; }
 
-  /* ── CARDS ── */
-  .card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-  }
-  .card-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.1rem;
-    color: var(--text);
-    margin-bottom: 14px;
-    display: flex; align-items: center; gap: 8px;
-  }
+  .card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .card-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
 
-  /* ── PAGE 1: LEDGER ── */
-  .type-toggle {
-    display: flex; gap: 10px; margin-bottom: 16px;
-  }
-  .type-btn {
-    flex: 1; padding: 12px; border: 2px solid #eee;
-    border-radius: 14px; background: #fff;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 800; font-size: 1rem;
-    cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
+  .type-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
+  .type-btn { flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 14px; background: #fff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .type-btn.income.active  { background: #E8FAE8; border-color: var(--green); color: #2a7a2a; }
-  .type-btn.expense.active { background: #FFF0F0; border-color: var(--red);   color: #a30000; }
+  .type-btn.expense.active { background: #FFF0F0; border-color: var(--red); color: #a30000; }
 
   .input-group { margin-bottom: 12px; }
-  .input-group label {
-    display: block; font-weight: 700; font-size: 0.85rem;
-    color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .input-group input, .input-group textarea {
-    width: 100%; padding: 12px 14px;
-    border: 2px solid #EEE; border-radius: 12px;
-    font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 600;
-    outline: none; transition: border 0.2s; background: #FAFAFA;
-  }
-  .input-group input:focus, .input-group textarea:focus {
-    border-color: var(--pink); background: #fff;
-  }
+  .input-group label { display: block; font-weight: 700; font-size: 0.85rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .input-group input, .input-group textarea { width: 100%; padding: 12px 14px; border: 2px solid #EEE; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 600; outline: none; transition: border 0.2s; background: #FAFAFA; }
+  .input-group input:focus, .input-group textarea:focus { border-color: var(--pink); background: #fff; }
   .input-group textarea { resize: none; height: 72px; }
 
-  .submit-btn {
-    width: 100%; padding: 15px;
-    border: none; border-radius: 14px;
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.2rem; letter-spacing: 1px;
-    cursor: pointer; transition: all 0.2s;
-    background: linear-gradient(135deg, var(--pink), #FF9A5C);
-    color: #fff; box-shadow: 0 4px 14px rgba(255,107,157,0.35);
-  }
+  .submit-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; font-family: 'Fredoka One', cursive; font-size: 1.2rem; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; background: linear-gradient(135deg, var(--pink), #FF9A5C); color: #fff; box-shadow: 0 4px 14px rgba(255,107,157,0.35); }
   .submit-btn:active { transform: scale(0.97); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-  /* transaction list */
   .tx-list { display: flex; flex-direction: column; gap: 10px; }
-  .tx-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; border-radius: 14px;
-    background: #FAFAFA; border: 1.5px solid #F0E8DE;
-    transition: box-shadow 0.2s;
-  }
-  .tx-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-  .tx-icon {
-    width: 40px; height: 40px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; flex-shrink: 0;
-  }
+  .tx-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #FAFAFA; border: 1.5px solid #F0E8DE; }
+  .tx-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
   .tx-icon.income  { background: #E8FAE8; }
   .tx-icon.expense { background: #FFF0F0; }
-  .tx-info { flex: 1; }
-  .tx-desc { font-weight: 700; font-size: 0.9rem; }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-desc { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tx-date { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
-  .tx-amount { font-weight: 900; font-size: 1rem; }
+  .tx-amount { font-weight: 900; font-size: 1rem; flex-shrink: 0; }
   .tx-amount.income  { color: var(--green); }
   .tx-amount.expense { color: var(--red); }
   .tx-actions { display: flex; gap: 4px; flex-shrink: 0; }
-  .tx-edit {
-    background: none; border: none; cursor: pointer;
-    color: #ccc; font-size: 1rem; padding: 4px;
-    border-radius: 6px; transition: color 0.2s;
-  }
-  .tx-edit:hover { color: var(--blue); }
-  .tx-delete {
-    background: none; border: none; cursor: pointer;
-    color: #ccc; font-size: 1rem; padding: 4px;
-    border-radius: 6px; transition: color 0.2s;
-  }
+  .tx-edit, .tx-delete { background: none; border: none; cursor: pointer; color: #ccc; font-size: 1rem; padding: 4px; border-radius: 6px; transition: color 0.2s; }
+  .tx-edit:hover   { color: var(--blue); }
   .tx-delete:hover { color: var(--red); }
 
-  /* ── EDIT MODAL ── */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45); z-index: 200;
-    align-items: center; justify-content: center; padding: 20px;
-    pointer-events: none;
-  }
-  .modal-overlay.open { display: flex; pointer-events: auto; }
-  .modal {
-    background: #fff; border-radius: var(--radius);
-    padding: 24px; width: 100%; max-width: 400px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-  }
-  .modal-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.2rem; margin-bottom: 18px;
-  }
-  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
-  .modal-save {
-    flex: 1; padding: 12px; border: none; border-radius: 12px;
-    background: linear-gradient(135deg, var(--pink), #FF9A5C);
-    color: #fff; font-family: 'Fredoka One', cursive;
-    font-size: 1rem; cursor: pointer;
-  }
-  .modal-cancel {
-    flex: 1; padding: 12px; border: 2px solid #EEE; border-radius: 12px;
-    background: #fff; font-family: 'Nunito', sans-serif;
-    font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--muted);
-  }
-
-  /* ── PAGE 2: HISTORY CHART ── */
   .chart-wrap { position: relative; height: 300px; }
 
-  /* ── PAGE 3: COMPOUND ── */
-  .rate-row {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
-  }
-  .rate-row input {
-    width: 90px; padding: 10px 12px;
-    border: 2px solid #EEE; border-radius: 12px;
-    font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800;
-    outline: none; text-align: center; background: #FAFAFA;
-  }
+  .rate-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .rate-row input { width: 90px; padding: 10px 12px; border: 2px solid #EEE; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800; outline: none; text-align: center; background: #FAFAFA; }
   .rate-row input:focus { border-color: var(--blue); background: #fff; }
   .rate-label { font-weight: 700; color: var(--muted); }
-  .legend-row {
-    display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap;
-  }
-  .legend-item {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 0.85rem; font-weight: 700;
-  }
+  .legend-row { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; }
   .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
 
-  /* compound table */
   .compound-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  .compound-table th {
-    text-align: left; padding: 8px 10px;
-    border-bottom: 2px solid #F0E8DE;
-    font-weight: 800; color: var(--muted); font-size: 0.75rem;
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .compound-table td {
-    padding: 10px 10px; border-bottom: 1px solid #F5EDE3;
-    font-weight: 600;
-  }
+  .compound-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #F0E8DE; font-weight: 800; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .compound-table td { padding: 10px; border-bottom: 1px solid #F5EDE3; font-weight: 600; }
   .compound-table tr:last-child td { border-bottom: none; }
-  .cost-10yr { font-weight: 900; color: var(--red); }
+  .cost-future { font-weight: 900; color: var(--red); }
 
-  /* ── EMPTY STATE ── */
-  .empty {
-    text-align: center; padding: 30px 0;
-    color: var(--muted); font-size: 0.9rem; font-weight: 600;
-  }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; padding: 20px; pointer-events: none; }
+  .modal-overlay.open { display: flex; pointer-events: auto; }
+  .modal { background: #fff; border-radius: var(--radius); padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+  .modal-title { font-family: 'Fredoka One', cursive; font-size: 1.2rem; margin-bottom: 18px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-save   { flex: 1; padding: 12px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--pink), #FF9A5C); color: #fff; font-family: 'Fredoka One', cursive; font-size: 1rem; cursor: pointer; }
+  .modal-cancel { flex: 1; padding: 12px; border: 2px solid #EEE; border-radius: 12px; background: #fff; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--muted); }
+
+  .empty { text-align: center; padding: 30px 0; color: var(--muted); font-size: 0.9rem; font-weight: 600; }
   .empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+  .loading-mask { text-align: center; padding: 40px 0; color: var(--muted); font-size: 0.95rem; font-weight: 700; }
+  .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid #F0E8DE; border-top-color: var(--pink); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── DEBUG CONSOLE ── */
-  #debug-panel {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: rgba(20,20,20,0.95); color: #00FF88;
-    font-family: monospace; font-size: 0.72rem;
-    padding: 6px 10px; max-height: 120px; overflow-y: auto;
-    z-index: 9999; display: none;
-    border-top: 2px solid #00FF88;
-  }
-  #debug-toggle {
-    position: fixed; bottom: 10px; right: 10px;
-    background: #222; color: #00FF88;
-    border: 1px solid #00FF88; border-radius: 6px;
-    font-size: 0.65rem; padding: 3px 7px;
-    cursor: pointer; z-index: 10000; font-family: monospace;
-  }
-
-  /* toast */
-  .toast {
-    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
-    background: #333; color: #fff; padding: 10px 22px;
-    border-radius: 30px; font-weight: 700; font-size: 0.9rem;
-    z-index: 9998; opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-  }
+  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 22px; border-radius: 30px; font-weight: 700; font-size: 0.9rem; z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap; }
   .toast.show { opacity: 1; }
+
+  #debug-panel { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(20,20,20,0.95); color: #00FF88; font-family: monospace; font-size: 0.72rem; padding: 6px 10px; max-height: 120px; overflow-y: auto; z-index: 9999; display: none; border-top: 2px solid #00FF88; }
+  #debug-toggle { position: fixed; bottom: 10px; right: 10px; background: #222; color: #00FF88; border: 1px solid #00FF88; border-radius: 6px; font-size: 0.65rem; padding: 3px 7px; cursor: pointer; z-index: 10000; font-family: monospace; }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
-  <div>
+  <div class="topbar-left">
     <div class="topbar-title">🐷 小豬撲滿</div>
-    <span class="version-badge">v1.04</span>
+    <span class="version-badge">v1.05</span>
   </div>
   <div class="balance-pill" id="balance-display">NT$ 0</div>
 </div>
 
-<!-- NAV -->
+<div class="sync-bar">
+  <div class="sync-dot loading" id="sync-dot"></div>
+  <span id="sync-text">連線中...</span>
+</div>
+
 <nav class="nav">
-  <button class="nav-btn active" onclick="showPage('ledger',this)">
-    <span class="nav-icon">✏️</span>記帳
-  </button>
-  <button class="nav-btn" onclick="showPage('history',this)">
-    <span class="nav-icon">📈</span>歷史
-  </button>
-  <button class="nav-btn" onclick="showPage('compound',this)">
-    <span class="nav-icon">🚀</span>複利
-  </button>
+  <button class="nav-btn active" onclick="showPage('ledger',this)"><span class="nav-icon">✏️</span>記帳</button>
+  <button class="nav-btn" onclick="showPage('history',this)"><span class="nav-icon">📈</span>歷史</button>
+  <button class="nav-btn" onclick="showPage('compound',this)"><span class="nav-icon">🚀</span>複利</button>
 </nav>
 
-<!-- ══════════════ PAGE 1 ══════════════ -->
+<!-- PAGE 1 -->
 <div class="page active" id="page-ledger">
-
   <div class="card">
     <div class="card-title">💰 新增紀錄</div>
-
     <div class="type-toggle">
-      <button class="type-btn income active" id="btn-income" onclick="setType('income')">
-        ➕ 收入
-      </button>
-      <button class="type-btn expense" id="btn-expense" onclick="setType('expense')">
-        ➖ 支出
-      </button>
+      <button class="type-btn income active" id="btn-income"  onclick="setType('income')">➕ 收入</button>
+      <button class="type-btn expense"       id="btn-expense" onclick="setType('expense')">➖ 支出</button>
     </div>
-
     <div class="input-group">
       <label>金額（元）</label>
       <input type="number" id="input-amount" placeholder="例：200" min="0" />
     </div>
-
     <div class="input-group">
       <label>說明（選填）</label>
       <textarea id="input-desc" placeholder="例：零用錢、買飲料..."></textarea>
     </div>
-
-    <button class="submit-btn" onclick="addTransaction()">記下來 🎉</button>
+    <button class="submit-btn" id="submit-btn" onclick="addTransaction()">記下來 🎉</button>
   </div>
-
   <div class="card">
     <div class="card-title">📋 所有紀錄</div>
     <div class="tx-list" id="tx-list">
-      <div class="empty"><span class="empty-icon">📭</span>還沒有紀錄喔！</div>
+      <div class="loading-mask"><div class="spinner"></div><br>載入中...</div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════ PAGE 2 ══════════════ -->
+<!-- PAGE 2 -->
 <div class="page" id="page-history">
   <div class="card">
     <div class="card-title">📈 資產變化</div>
-    <div class="chart-wrap">
-      <canvas id="history-chart"></canvas>
-    </div>
+    <div class="chart-wrap"><canvas id="history-chart"></canvas></div>
   </div>
 </div>
 
-<!-- ══════════════ PAGE 3 ══════════════ -->
+<!-- PAGE 3 -->
 <div class="page" id="page-compound">
-
   <div class="card">
     <div class="card-title">⚙️ 設定</div>
     <div class="rate-row">
@@ -378,29 +185,17 @@
       <span class="rate-label">年</span>
     </div>
     <div class="legend-row">
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--green)"></div>
-        <span>不花錢的理想未來</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--red)"></div>
-        <span>扣掉花費的現實未來</span>
-      </div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div><span>不花錢的理想未來</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div><span>扣掉花費的現實未來</span></div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title" id="compound-card-title">🚀 複利預測</div>
-    <div class="chart-wrap">
-      <canvas id="compound-chart"></canvas>
-    </div>
+    <div class="chart-wrap"><canvas id="compound-chart"></canvas></div>
   </div>
-
   <div class="card">
     <div class="card-title">💸 每筆花費的真正代價</div>
-    <div id="compound-table-wrap">
-      <div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div>
-    </div>
+    <div id="compound-table-wrap"><div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div></div>
   </div>
 </div>
 
@@ -419,162 +214,198 @@
     </div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeEditModal()">取消</button>
-      <button class="modal-save" onclick="saveEdit()">儲存 ✓</button>
+      <button class="modal-save"   onclick="saveEdit()">儲存 ✓</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
-
-<!-- DEBUG -->
 <button id="debug-toggle" onclick="toggleDebug()">DEBUG</button>
 <div id="debug-panel"></div>
 
 <script>
-// ══════════════════════════════════════
-//  DEBUG LOGGER
-// ══════════════════════════════════════
+// ── CONFIG ──────────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbzmNjFM-IRaGuEQ03nEYo2AAyFumiSEXVSD1AwODFKBuVFGIcSSVGVxbbcd4FRa8_TEWA/exec';
+
+// ── DEBUG ────────────────────────────────────────────
 const debugLines = [];
 function dbg(msg, data) {
   const ts = new Date().toLocaleTimeString('zh-TW');
-  const line = data !== undefined
-    ? `[${ts}] ${msg}: ${JSON.stringify(data)}`
-    : `[${ts}] ${msg}`;
+  const line = data !== undefined ? `[${ts}] ${msg}: ${JSON.stringify(data)}` : `[${ts}] ${msg}`;
   debugLines.unshift(line);
-  if (debugLines.length > 50) debugLines.pop();
-  const panel = document.getElementById('debug-panel');
-  if (panel) panel.innerHTML = debugLines.map(l => `<div>${l}</div>`).join('');
+  if (debugLines.length > 80) debugLines.pop();
+  const p = document.getElementById('debug-panel');
+  if (p) p.innerHTML = debugLines.map(l => `<div>${l}</div>`).join('');
   console.log(line);
 }
 function toggleDebug() {
   const p = document.getElementById('debug-panel');
   p.style.display = p.style.display === 'block' ? 'none' : 'block';
 }
-window.onerror = (msg, src, line, col, err) => {
-  dbg(`❌ ERROR: ${msg}`, { src, line, col });
+window.onerror = (msg, src, line, col) => {
+  dbg('❌ ERROR: ' + msg, { src, line, col });
   showToast('⚠️ 發生錯誤，請開啟 DEBUG 查看');
 };
 
-// ══════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════
+// ── STATE ────────────────────────────────────────────
 let txType = 'income';
+let txCache = [];
 let historyChartInst = null;
 let compoundChartInst = null;
 
-function getTransactions() {
-  try {
-    return JSON.parse(localStorage.getItem('piggy_txs') || '[]');
-  } catch(e) { dbg('getTransactions error', e.message); return []; }
-}
-function saveTransactions(txs) {
-  try {
-    localStorage.setItem('piggy_txs', JSON.stringify(txs));
-    dbg('saved transactions', txs.length);
-  } catch(e) { dbg('saveTransactions error', e.message); }
-}
-function getBalance() {
-  return getTransactions().reduce((sum, tx) => {
-    return tx.type === 'income' ? sum + tx.amount : sum - tx.amount;
-  }, 0);
+// ── SYNC UI ──────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  document.getElementById('sync-dot').className = 'sync-dot ' + state;
+  document.getElementById('sync-text').textContent = msg;
 }
 
-// ══════════════════════════════════════
-//  NAV
-// ══════════════════════════════════════
+// ── API ──────────────────────────────────────────────
+async function apiGet(action) {
+  dbg('apiGet', action);
+  const res  = await fetch(API_URL + '?action=' + action);
+  const json = await res.json();
+  dbg('apiGet result', json);
+  return json;
+}
+async function apiPost(body) {
+  dbg('apiPost', body.action);
+  const res  = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  const json = await res.json();
+  dbg('apiPost result', json);
+  return json;
+}
+
+// ── LOAD ─────────────────────────────────────────────
+async function loadAll() {
+  setSyncStatus('loading', '連線中...');
+  try {
+    const data = await apiGet('getAll');
+    if (data.error) throw new Error(data.error);
+    txCache = (data.txs || []).map(tx => ({ ...tx, amount: Number(tx.amount) }));
+    setSyncStatus('ok', '已同步・' + txCache.length + ' 筆紀錄');
+    renderTxList();
+    updateBalance();
+    dbg('loadAll ok', txCache.length);
+  } catch(e) {
+    setSyncStatus('error', '連線失敗，請檢查 Apps Script 設定');
+    document.getElementById('tx-list').innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span>無法載入，請開啟 DEBUG 查看</div>';
+    dbg('loadAll error', e.message);
+  }
+}
+
+// ── BALANCE ──────────────────────────────────────────
+function getBalance() {
+  return txCache.reduce((s, tx) => tx.type === 'income' ? s + tx.amount : s - tx.amount, 0);
+}
+function updateBalance() {
+  document.getElementById('balance-display').textContent = 'NT$ ' + getBalance().toLocaleString();
+}
+
+// ── NAV ──────────────────────────────────────────────
 function showPage(name, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   btn.classList.add('active');
-  dbg('showPage', name);
-  if (name === 'history') renderHistory();
+  if (name === 'history')  renderHistory();
   if (name === 'compound') renderCompound();
+  dbg('showPage', name);
 }
 
-// ══════════════════════════════════════
-//  PAGE 1 – LEDGER
-// ══════════════════════════════════════
+// ── TYPE TOGGLE ──────────────────────────────────────
 function setType(t) {
   txType = t;
-  document.getElementById('btn-income').classList.toggle('active', t === 'income');
+  document.getElementById('btn-income').classList.toggle('active',  t === 'income');
   document.getElementById('btn-expense').classList.toggle('active', t === 'expense');
-  dbg('setType', t);
 }
 
-function addTransaction() {
+// ── ADD ──────────────────────────────────────────────
+async function addTransaction() {
   const amtRaw = document.getElementById('input-amount').value;
   const desc   = document.getElementById('input-desc').value.trim();
   const amt    = parseFloat(amtRaw);
+  if (!amtRaw || isNaN(amt) || amt <= 0) { showToast('❗ 請輸入有效金額'); return; }
 
-  if (!amtRaw || isNaN(amt) || amt <= 0) {
-    showToast('❗ 請輸入有效金額');
-    return;
-  }
+  const tx = { id: Date.now(), type: txType, amount: amt, desc: desc || (txType === 'income' ? '收入' : '支出'), date: new Date().toISOString() };
 
-  const tx = {
-    id:     Date.now(),
-    type:   txType,
-    amount: amt,
-    desc:   desc || (txType === 'income' ? '收入' : '支出'),
-    date:   new Date().toISOString()
-  };
-
-  const txs = getTransactions();
-  txs.push(tx);
-  saveTransactions(txs);
-
+  // 樂觀更新
+  txCache.push(tx);
+  renderTxList();
+  updateBalance();
   document.getElementById('input-amount').value = '';
   document.getElementById('input-desc').value   = '';
 
-  renderTxList();
-  updateBalance();
-  showToast(txType === 'income' ? '💰 收入新增成功！' : '💸 支出紀錄完成！');
-  dbg('addTransaction', tx);
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  setSyncStatus('loading', '儲存中...');
+  try {
+    const res = await apiPost({ action: 'add', tx });
+    if (res.error) throw new Error(res.error);
+    setSyncStatus('ok', '已同步・' + txCache.length + ' 筆紀錄');
+    showToast(txType === 'income' ? '💰 收入新增成功！' : '💸 支出紀錄完成！');
+    dbg('addTransaction ok', tx.id);
+  } catch(e) {
+    txCache = txCache.filter(t => t.id !== tx.id);
+    renderTxList(); updateBalance();
+    setSyncStatus('error', '儲存失敗');
+    showToast('⚠️ 儲存失敗，請再試一次');
+    dbg('addTransaction error', e.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
-function deleteTransaction(id) {
-  const txs = getTransactions().filter(tx => tx.id !== id);
-  saveTransactions(txs);
-  renderTxList();
-  updateBalance();
-  showToast('🗑️ 已刪除');
-  dbg('deleteTransaction', id);
+// ── DELETE ───────────────────────────────────────────
+async function deleteTransaction(id) {
+  const backup = [...txCache];
+  txCache = txCache.filter(tx => tx.id !== id);
+  renderTxList(); updateBalance();
+
+  setSyncStatus('loading', '刪除中...');
+  try {
+    const res = await apiPost({ action: 'delete', id: String(id) });
+    if (res.error) throw new Error(res.error);
+    setSyncStatus('ok', '已同步・' + txCache.length + ' 筆紀錄');
+    showToast('🗑️ 已刪除');
+    dbg('delete ok', id);
+  } catch(e) {
+    txCache = backup; renderTxList(); updateBalance();
+    setSyncStatus('error', '刪除失敗');
+    showToast('⚠️ 刪除失敗，請再試一次');
+    dbg('delete error', e.message);
+  }
 }
 
+// ── RENDER TX LIST ───────────────────────────────────
 function renderTxList() {
   const list = document.getElementById('tx-list');
-  const txs  = getTransactions().slice().reverse();
-
+  const txs  = [...txCache].reverse();
   if (txs.length === 0) {
     list.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>還沒有紀錄喔！</div>';
     return;
   }
-
   list.innerHTML = txs.map(tx => {
     const d = new Date(tx.date);
-    const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const ds = d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
     const sign = tx.type === 'income' ? '+' : '-';
-    return `
-      <div class="tx-item">
-        <div class="tx-icon ${tx.type}">${tx.type === 'income' ? '💰' : '💸'}</div>
-        <div class="tx-info">
-          <div class="tx-desc">${escHtml(tx.desc)}</div>
-          <div class="tx-date">${dateStr}</div>
-        </div>
-        <div class="tx-amount ${tx.type}">${sign}NT$${tx.amount.toLocaleString()}</div>
-        <div class="tx-actions">
-          <button class="tx-edit" onclick="openEditModal(${tx.id})" title="修改">✎</button>
-          <button class="tx-delete" onclick="deleteTransaction(${tx.id})" title="刪除">✕</button>
-        </div>
-      </div>
-    `;
+    return '<div class="tx-item">' +
+      '<div class="tx-icon ' + tx.type + '">' + (tx.type === 'income' ? '💰' : '💸') + '</div>' +
+      '<div class="tx-info"><div class="tx-desc">' + esc(tx.desc) + '</div><div class="tx-date">' + ds + '</div></div>' +
+      '<div class="tx-amount ' + tx.type + '">' + sign + 'NT$' + tx.amount.toLocaleString() + '</div>' +
+      '<div class="tx-actions">' +
+      '<button class="tx-edit"   onclick="openEditModal(' + tx.id + ')" title="修改">✎</button>' +
+      '<button class="tx-delete" onclick="deleteTransaction(' + tx.id + ')" title="刪除">✕</button>' +
+      '</div></div>';
   }).join('');
 }
 
+// ── EDIT MODAL ───────────────────────────────────────
 function openEditModal(id) {
-  const tx = getTransactions().find(t => t.id === id);
+  const tx = txCache.find(t => t.id === id);
   if (!tx) return;
   document.getElementById('edit-id').value     = id;
   document.getElementById('edit-amount').value = tx.amount;
@@ -585,139 +416,100 @@ function openEditModal(id) {
 function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('open');
 }
-function saveEdit() {
-  const id  = parseInt(document.getElementById('edit-id').value);
-  const amt = parseFloat(document.getElementById('edit-amount').value);
+async function saveEdit() {
+  const id   = parseInt(document.getElementById('edit-id').value);
+  const amt  = parseFloat(document.getElementById('edit-amount').value);
   const desc = document.getElementById('edit-desc').value.trim();
   if (!amt || amt <= 0) { showToast('❗ 請輸入有效金額'); return; }
-  const txs = getTransactions().map(tx => {
-    if (tx.id !== id) return tx;
-    return { ...tx, amount: amt, desc: desc || tx.desc };
-  });
-  saveTransactions(txs);
-  closeEditModal();
-  renderTxList();
-  updateBalance();
-  showToast('✅ 修改完成！');
-  dbg('saveEdit', { id, amt, desc });
+
+  const backup = txCache.map(t => ({...t}));
+  txCache = txCache.map(tx => tx.id !== id ? tx : { ...tx, amount: amt, desc: desc || tx.desc });
+  closeEditModal(); renderTxList(); updateBalance();
+
+  setSyncStatus('loading', '儲存中...');
+  try {
+    const tx = txCache.find(t => t.id === id);
+    const res = await apiPost({ action: 'edit', tx });
+    if (res.error) throw new Error(res.error);
+    setSyncStatus('ok', '已同步・' + txCache.length + ' 筆紀錄');
+    showToast('✅ 修改完成！');
+    dbg('saveEdit ok', id);
+  } catch(e) {
+    txCache = backup; renderTxList(); updateBalance();
+    setSyncStatus('error', '修改失敗');
+    showToast('⚠️ 修改失敗，請再試一次');
+    dbg('saveEdit error', e.message);
+  }
 }
-// 點overlay背景關閉modal
 document.getElementById('edit-modal').addEventListener('click', function(e) {
   if (e.target === this) closeEditModal();
 });
 
-
-  const bal = getBalance();
-  document.getElementById('balance-display').textContent = `NT$ ${bal.toLocaleString()}`;
-}
-
-// ══════════════════════════════════════
-//  PAGE 2 – HISTORY CHART
-// ══════════════════════════════════════
+// ── HISTORY CHART ────────────────────────────────────
 function renderHistory() {
-  const txs = getTransactions();
-  const ctx  = document.getElementById('history-chart').getContext('2d');
-
+  const ctx = document.getElementById('history-chart').getContext('2d');
   if (historyChartInst) { historyChartInst.destroy(); historyChartInst = null; }
+  if (txCache.length === 0) return;
 
-  if (txs.length === 0) {
-    dbg('renderHistory: no data');
-    return;
-  }
-
-  // build cumulative data
   let running = 0;
-  const points = txs.map(tx => {
+  const points = [...txCache].map(tx => {
     running += tx.type === 'income' ? tx.amount : -tx.amount;
     const d = new Date(tx.date);
-    return {
-      x: `${d.getMonth()+1}/${d.getDate()}`,
-      y: running
-    };
+    return { x: (d.getMonth()+1) + '/' + d.getDate(), y: running };
   });
-
-  dbg('renderHistory points', points.length);
 
   historyChartInst = new Chart(ctx, {
     type: 'line',
     data: {
       labels: points.map(p => p.x),
-      datasets: [{
-        label: '累積資產 (NT$)',
-        data: points.map(p => p.y),
-        borderColor: '#FF6B9D',
-        backgroundColor: 'rgba(255,107,157,0.12)',
-        borderWidth: 3,
-        pointRadius: 5,
-        pointBackgroundColor: '#FF6B9D',
-        fill: true,
-        tension: 0.3
-      }]
+      datasets: [{ label: '累積資產 (NT$)', data: points.map(p => p.y), borderColor: '#FF6B9D', backgroundColor: 'rgba(255,107,157,0.12)', borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#FF6B9D', fill: true, tension: 0.3 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: {
-          ticks: {
-            callback: v => 'NT$' + v.toLocaleString(),
-            font: { family: 'Nunito', weight: '700' }
-          },
-          grid: { color: '#F0E8DE' }
-        },
-        x: {
-          ticks: { font: { family: 'Nunito', weight: '600' } },
-          grid: { color: '#F0E8DE' }
-        }
+        y: { ticks: { callback: v => 'NT$'+v.toLocaleString(), font: { family:'Nunito', weight:'700' } }, grid: { color:'#F0E8DE' } },
+        x: { ticks: { font: { family:'Nunito', weight:'600' } }, grid: { color:'#F0E8DE' } }
       }
     }
   });
+  dbg('renderHistory', points.length);
 }
 
-// ══════════════════════════════════════
-//  PAGE 3 – COMPOUND CHART
-// ══════════════════════════════════════
+// ── COMPOUND CHART ───────────────────────────────────
 function renderCompound() {
   const rate     = parseFloat(document.getElementById('input-rate').value) / 100 || 0.05;
   const numYears = Math.max(1, parseInt(document.getElementById('input-years').value) || 10);
-  const txs      = getTransactions();
   const balance  = getBalance();
-  const expenses = txs.filter(tx => tx.type === 'expense');
+  const expenses = txCache.filter(tx => tx.type === 'expense');
   const totalExp = expenses.reduce((s, tx) => s + tx.amount, 0);
   const ctx      = document.getElementById('compound-chart').getContext('2d');
 
-  // 更新卡片標題
-  document.getElementById('compound-card-title').textContent = `🚀 ${numYears}年複利預測`;
-
+  document.getElementById('compound-card-title').textContent = '🚀 ' + numYears + '年複利預測';
   if (compoundChartInst) { compoundChartInst.destroy(); compoundChartInst = null; }
 
   const fullAmount = balance + totalExp;
-  const years  = Array.from({length: numYears + 1}, (_, i) => `第${i}年`);
-  const ideal  = years.map((_, i) => +(fullAmount * Math.pow(1 + rate, i)).toFixed(0));
-  const real   = years.map((_, i) => +(balance   * Math.pow(1 + rate, i)).toFixed(0));
+  const labels = Array.from({length: numYears + 1}, (_, i) => '第' + i + '年');
+  const ideal  = labels.map((_, i) => +(fullAmount * Math.pow(1 + rate, i)).toFixed(0));
+  const real   = labels.map((_, i) => +(balance   * Math.pow(1 + rate, i)).toFixed(0));
 
-  dbg('renderCompound', { rate, numYears, balance, totalExp });
-
-  // plugin：在每條線尾端顯示金額
   const endLabelPlugin = {
     id: 'endLabel',
     afterDatasetsDraw(chart) {
-      const { ctx: c, scales: { x, y } } = chart;
+      const { ctx: c } = chart;
       chart.data.datasets.forEach((ds, i) => {
         const meta = chart.getDatasetMeta(i);
         if (meta.hidden) return;
         const last = meta.data[meta.data.length - 1];
         if (!last) return;
-        const val = ds.data[ds.data.length - 1];
-        const text = 'NT$' + val.toLocaleString();
+        const text = 'NT$' + ds.data[ds.data.length - 1].toLocaleString();
         c.save();
         c.font = 'bold 12px Nunito, sans-serif';
         const tw = c.measureText(text).width;
-        c.fillStyle = 'rgba(255,255,255,0.88)';
+        c.fillStyle = 'rgba(255,255,255,0.9)';
         c.fillRect(last.x + 6, last.y - 10, tw + 8, 20);
         c.fillStyle = ds.borderColor;
-        c.textAlign = 'left';
-        c.textBaseline = 'middle';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
         c.fillText(text, last.x + 10, last.y);
         c.restore();
       });
@@ -728,61 +520,28 @@ function renderCompound() {
     type: 'line',
     plugins: [endLabelPlugin],
     data: {
-      labels: years,
+      labels,
       datasets: [
-        {
-          label: '🟢 理想（不花錢）',
-          data: ideal,
-          borderColor: '#6BCB77',
-          backgroundColor: 'rgba(107,203,119,0.10)',
-          borderWidth: 3,
-          pointRadius: 4,
-          pointBackgroundColor: '#6BCB77',
-          fill: false, tension: 0.3
-        },
-        {
-          label: '🔴 現實（扣花費）',
-          data: real,
-          borderColor: '#FF4D4D',
-          backgroundColor: 'rgba(255,77,77,0.08)',
-          borderWidth: 3,
-          pointRadius: 4,
-          pointBackgroundColor: '#FF4D4D',
-          fill: false, tension: 0.3
-        }
+        { label: '🟢 理想（不花錢）', data: ideal, borderColor: '#6BCB77', backgroundColor: 'rgba(107,203,119,0.10)', borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#6BCB77', fill: false, tension: 0.3 },
+        { label: '🔴 現實（扣花費）', data: real,  borderColor: '#FF4D4D', backgroundColor: 'rgba(255,77,77,0.08)',   borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#FF4D4D', fill: false, tension: 0.3 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { right: 95 } },
       plugins: {
-        legend: {
-          labels: { font: { family: 'Nunito', weight: '700' }, boxWidth: 14 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` NT$ ${ctx.raw.toLocaleString()}`
-          }
-        }
+        legend: { labels: { font: { family:'Nunito', weight:'700' }, boxWidth: 14 } },
+        tooltip: { callbacks: { label: ctx => ' NT$ ' + ctx.raw.toLocaleString() } }
       },
       scales: {
-        y: {
-          ticks: {
-            callback: v => 'NT$' + v.toLocaleString(),
-            font: { family: 'Nunito', weight: '700' }
-          },
-          grid: { color: '#F0E8DE' }
-        },
-        x: {
-          ticks: { font: { family: 'Nunito', weight: '600' } },
-          grid: { color: '#F0E8DE' }
-        }
+        y: { ticks: { callback: v => 'NT$'+v.toLocaleString(), font: { family:'Nunito', weight:'700' } }, grid: { color:'#F0E8DE' } },
+        x: { ticks: { font: { family:'Nunito', weight:'600' } }, grid: { color:'#F0E8DE' } }
       }
     }
   });
 
-  // render table
   renderCompoundTable(expenses, rate, numYears);
+  dbg('renderCompound', { rate, numYears, balance, totalExp });
 }
 
 function renderCompoundTable(expenses, rate, numYears) {
@@ -791,56 +550,29 @@ function renderCompoundTable(expenses, rate, numYears) {
     wrap.innerHTML = '<div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div>';
     return;
   }
-
   const rows = expenses.map(tx => {
-    const costFuture = Math.round(tx.amount * Math.pow(1 + rate, numYears));
+    const future = Math.round(tx.amount * Math.pow(1 + rate, numYears));
     const d = new Date(tx.date);
-    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
-    return `
-      <tr>
-        <td>${dateStr}</td>
-        <td>${escHtml(tx.desc)}</td>
-        <td style="color:var(--red);font-weight:800;">-NT$${tx.amount.toLocaleString()}</td>
-        <td class="cost-10yr">≈ NT$${costFuture.toLocaleString()}</td>
-      </tr>
-    `;
+    return '<tr><td>' + (d.getMonth()+1) + '/' + d.getDate() + '</td><td>' + esc(tx.desc) + '</td>' +
+      '<td style="color:var(--red);font-weight:800;">-NT$' + tx.amount.toLocaleString() + '</td>' +
+      '<td class="cost-future">≈ NT$' + future.toLocaleString() + '</td></tr>';
   }).join('');
-
-  wrap.innerHTML = `
-    <table class="compound-table">
-      <thead>
-        <tr>
-          <th>日期</th>
-          <th>說明</th>
-          <th>花費</th>
-          <th>${numYears}年後代價</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-  dbg('renderCompoundTable rows', expenses.length);
+  wrap.innerHTML = '<table class="compound-table"><thead><tr><th>日期</th><th>說明</th><th>花費</th><th>' + numYears + '年後代價</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
-// ══════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════
+// ── UTILS ────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
-function escHtml(s) {
+function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ══════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════
-dbg('🐷 App init v1.04');
-renderTxList();
-updateBalance();
+// ── INIT ─────────────────────────────────────────────
+dbg('🐷 App init v1.05');
+loadAll();
 </script>
 </body>
 </html>
