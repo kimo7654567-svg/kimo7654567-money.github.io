@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>小豬撲滿 🐷</title>
-<!-- v1.02 -->
+<!-- v1.03 -->
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -175,12 +175,48 @@
   .tx-amount { font-weight: 900; font-size: 1rem; }
   .tx-amount.income  { color: var(--green); }
   .tx-amount.expense { color: var(--red); }
+  .tx-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .tx-edit {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 1rem; padding: 4px;
+    border-radius: 6px; transition: color 0.2s;
+  }
+  .tx-edit:hover { color: var(--blue); }
   .tx-delete {
     background: none; border: none; cursor: pointer;
     color: #ccc; font-size: 1rem; padding: 4px;
     border-radius: 6px; transition: color 0.2s;
   }
   .tx-delete:hover { color: var(--red); }
+
+  /* ── EDIT MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 200;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: var(--radius);
+    padding: 24px; width: 100%; max-width: 400px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  }
+  .modal-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem; margin-bottom: 18px;
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-save {
+    flex: 1; padding: 12px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--pink), #FF9A5C);
+    color: #fff; font-family: 'Fredoka One', cursive;
+    font-size: 1rem; cursor: pointer;
+  }
+  .modal-cancel {
+    flex: 1; padding: 12px; border: 2px solid #EEE; border-radius: 12px;
+    background: #fff; font-family: 'Nunito', sans-serif;
+    font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--muted);
+  }
 
   /* ── PAGE 2: HISTORY CHART ── */
   .chart-wrap { position: relative; height: 300px; }
@@ -262,7 +298,7 @@
 <div class="topbar">
   <div>
     <div class="topbar-title">🐷 小豬撲滿</div>
-    <span class="version-badge">v1.02</span>
+    <span class="version-badge">v1.03</span>
   </div>
   <div class="balance-pill" id="balance-display">NT$ 0</div>
 </div>
@@ -333,8 +369,13 @@
     <div class="card-title">⚙️ 設定</div>
     <div class="rate-row">
       <span class="rate-label">年利率</span>
-      <input type="number" id="input-rate" value="5" min="0" max="100" step="0.1" oninput="renderCompound()" />
+      <input type="number" id="input-rate" value="5" min="0" max="1000" step="0.1" oninput="renderCompound()" />
       <span class="rate-label">%</span>
+    </div>
+    <div class="rate-row">
+      <span class="rate-label">計算年數</span>
+      <input type="number" id="input-years" value="10" min="1" max="50" step="1" oninput="renderCompound()" />
+      <span class="rate-label">年</span>
     </div>
     <div class="legend-row">
       <div class="legend-item">
@@ -349,7 +390,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">🚀 十年複利預測</div>
+    <div class="card-title" id="compound-card-title">🚀 複利預測</div>
     <div class="chart-wrap">
       <canvas id="compound-chart"></canvas>
     </div>
@@ -359,6 +400,26 @@
     <div class="card-title">💸 每筆花費的真正代價</div>
     <div id="compound-table-wrap">
       <div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ 修改紀錄</div>
+    <input type="hidden" id="edit-id" />
+    <div class="input-group">
+      <label>金額（元）</label>
+      <input type="number" id="edit-amount" min="0" />
+    </div>
+    <div class="input-group">
+      <label>說明</label>
+      <textarea id="edit-desc"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">取消</button>
+      <button class="modal-save" onclick="saveEdit()">儲存 ✓</button>
     </div>
   </div>
 </div>
@@ -503,13 +564,49 @@ function renderTxList() {
           <div class="tx-date">${dateStr}</div>
         </div>
         <div class="tx-amount ${tx.type}">${sign}NT$${tx.amount.toLocaleString()}</div>
-        <button class="tx-delete" onclick="deleteTransaction(${tx.id})" title="刪除">✕</button>
+        <div class="tx-actions">
+          <button class="tx-edit" onclick="openEditModal(${tx.id})" title="修改">✎</button>
+          <button class="tx-delete" onclick="deleteTransaction(${tx.id})" title="刪除">✕</button>
+        </div>
       </div>
     `;
   }).join('');
 }
 
-function updateBalance() {
+function openEditModal(id) {
+  const tx = getTransactions().find(t => t.id === id);
+  if (!tx) return;
+  document.getElementById('edit-id').value     = id;
+  document.getElementById('edit-amount').value = tx.amount;
+  document.getElementById('edit-desc').value   = tx.desc;
+  document.getElementById('edit-modal').classList.add('open');
+  dbg('openEditModal', id);
+}
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+function saveEdit() {
+  const id  = parseInt(document.getElementById('edit-id').value);
+  const amt = parseFloat(document.getElementById('edit-amount').value);
+  const desc = document.getElementById('edit-desc').value.trim();
+  if (!amt || amt <= 0) { showToast('❗ 請輸入有效金額'); return; }
+  const txs = getTransactions().map(tx => {
+    if (tx.id !== id) return tx;
+    return { ...tx, amount: amt, desc: desc || tx.desc };
+  });
+  saveTransactions(txs);
+  closeEditModal();
+  renderTxList();
+  updateBalance();
+  showToast('✅ 修改完成！');
+  dbg('saveEdit', { id, amt, desc });
+}
+// 點overlay背景關閉modal
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+
   const bal = getBalance();
   document.getElementById('balance-display').textContent = `NT$ ${bal.toLocaleString()}`;
 }
@@ -582,22 +679,24 @@ function renderHistory() {
 // ══════════════════════════════════════
 function renderCompound() {
   const rate     = parseFloat(document.getElementById('input-rate').value) / 100 || 0.05;
+  const numYears = Math.max(1, parseInt(document.getElementById('input-years').value) || 10);
   const txs      = getTransactions();
   const balance  = getBalance();
   const expenses = txs.filter(tx => tx.type === 'expense');
   const totalExp = expenses.reduce((s, tx) => s + tx.amount, 0);
   const ctx      = document.getElementById('compound-chart').getContext('2d');
 
+  // 更新卡片標題
+  document.getElementById('compound-card-title').textContent = `🚀 ${numYears}年複利預測`;
+
   if (compoundChartInst) { compoundChartInst.destroy(); compoundChartInst = null; }
 
-  // 理想線：如果當初完全不花錢，現在應該有 balance + totalExp，往後複利
-  // 現實線：現在實際資產 balance，往後複利
   const fullAmount = balance + totalExp;
-  const years  = Array.from({length: 11}, (_, i) => `第${i}年`);
+  const years  = Array.from({length: numYears + 1}, (_, i) => `第${i}年`);
   const ideal  = years.map((_, i) => +(fullAmount * Math.pow(1 + rate, i)).toFixed(0));
   const real   = years.map((_, i) => +(balance   * Math.pow(1 + rate, i)).toFixed(0));
 
-  dbg('renderCompound', { rate, balance, totalExp });
+  dbg('renderCompound', { rate, numYears, balance, totalExp });
 
   // plugin：在每條線尾端顯示金額
   const endLabelPlugin = {
@@ -683,10 +782,10 @@ function renderCompound() {
   });
 
   // render table
-  renderCompoundTable(expenses, rate);
+  renderCompoundTable(expenses, rate, numYears);
 }
 
-function renderCompoundTable(expenses, rate) {
+function renderCompoundTable(expenses, rate, numYears) {
   const wrap = document.getElementById('compound-table-wrap');
   if (expenses.length === 0) {
     wrap.innerHTML = '<div class="empty"><span class="empty-icon">🤔</span>還沒有支出紀錄</div>';
@@ -694,7 +793,7 @@ function renderCompoundTable(expenses, rate) {
   }
 
   const rows = expenses.map(tx => {
-    const cost10 = Math.round(tx.amount * Math.pow(1 + rate, 10));
+    const costFuture = Math.round(tx.amount * Math.pow(1 + rate, numYears));
     const d = new Date(tx.date);
     const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
     return `
@@ -702,7 +801,7 @@ function renderCompoundTable(expenses, rate) {
         <td>${dateStr}</td>
         <td>${escHtml(tx.desc)}</td>
         <td style="color:var(--red);font-weight:800;">-NT$${tx.amount.toLocaleString()}</td>
-        <td class="cost-10yr">≈ NT$${cost10.toLocaleString()}</td>
+        <td class="cost-10yr">≈ NT$${costFuture.toLocaleString()}</td>
       </tr>
     `;
   }).join('');
@@ -714,7 +813,7 @@ function renderCompoundTable(expenses, rate) {
           <th>日期</th>
           <th>說明</th>
           <th>花費</th>
-          <th>10年後代價</th>
+          <th>${numYears}年後代價</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -739,7 +838,7 @@ function escHtml(s) {
 // ══════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════
-dbg('🐷 App init v1.02');
+dbg('🐷 App init v1.03');
 renderTxList();
 updateBalance();
 </script>
